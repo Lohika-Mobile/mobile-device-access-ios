@@ -34,24 +34,28 @@ int main(int argc, const char * argv[])
         } else if ([option isEqualToString:@"coverage"])
         {
             NSString* appId = [arguments stringForKey:@"app"];
+            NSString* projectTarget = [arguments stringForKey:@"target"];
             NSString* toDir = [arguments stringForKey:@"to"];
             
-            NSLog(@"Will grab the coverage files from Device: %@ to %@", [device udid], toDir);
+            NSLog(@"Will grab the coverage files for %@ from Device: %@ to %@", projectTarget, [device udid], toDir);
             
-            if (!toDir || !appId) {
-                NSLog(@"Error: no toDir | no appId");
+            if (!toDir || !appId || !projectTarget) {
+                NSLog(@"Error: no toDir | no appId | no target");
                 return -1;
             }
             
             AFCApplicationDirectory* appDir = [device newAFCApplicationDirectory:appId];
             
-            NSString* prefixToRemove = @"/Documents/Build/Intermediates";
             NSArray* files = [appDir recursiveDirectoryContents:@"/Documents"];
             for (NSString* file in files) {
                 if([file hasSuffix:@".gcda"])
                 {
+                    NSRange range = [file rangeOfString:[NSString stringWithFormat:@"%@.build", projectTarget]];
+                    if(range.length == 0)
+                       continue;
+                    
                     NSString* filePath = [toDir stringByAppendingPathComponent:
-                                          [file substringFromIndex:[prefixToRemove length]]];
+                                          [file substringFromIndex:range.location]];
                     
                     // create destination folder if it doesn't exist
                     NSString* destinationDirectoryPath = [filePath stringByDeletingLastPathComponent];
